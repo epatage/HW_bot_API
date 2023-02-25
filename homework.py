@@ -9,6 +9,8 @@ import telegram
 from dotenv import load_dotenv
 
 from exceptions import RequestStatusException, StatusException
+from settings import (ENDPOINT, HEADERS, HOMEWORK_VERDICTS, RETRY_PERIOD,
+                      TIMESTAMP)
 
 load_dotenv()
 
@@ -17,19 +19,12 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-# Период времени за который должны отобразиться состояния проектов
-TIMESTAMP = {'form_date': 0}
+REQUIRED_VARS = [
+    PRACTICUM_TOKEN,
+    TELEGRAM_TOKEN,
+    TELEGRAM_CHAT_ID,
+]
 
-RETRY_PERIOD = 600
-ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-
-
-HOMEWORK_VERDICTS = {
-    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
-    'reviewing': 'Работа взята на проверку ревьюером.',
-    'rejected': 'Работа проверена: у ревьюера есть замечания.'
-}
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -44,26 +39,13 @@ logger.addHandler(handler)
 
 def check_tokens():
     """Проверяет наличие всех необходимых переменных окружения."""
-    if not PRACTICUM_TOKEN:
+    if not all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
         logger.critical(
-            f'Отсутствуют обязательная переменная'
-            f'окружения: {PRACTICUM_TOKEN}'
+            'Отсутствует обязательная переменная окружения'
         )
-        raise SystemExit(f'Отсутствует {PRACTICUM_TOKEN}.')
-
-    if not TELEGRAM_TOKEN:
-        logger.critical(
-            f'Отсутствуют обязательные переменные'
-            f'окружения.{TELEGRAM_TOKEN}'
+        raise SystemExit(
+            'Отсутствует обязательная переменная окружения.'
         )
-        raise SystemExit(f'Отсутствует {TELEGRAM_TOKEN}.')
-
-    if not TELEGRAM_CHAT_ID:
-        logger.critical(
-            f'Отсутствуют обязательные переменные'
-            f'окружения.{TELEGRAM_CHAT_ID}'
-        )
-        raise SystemExit(f'Отсутствует {TELEGRAM_CHAT_ID}.')
 
 
 def send_message(bot: telegram.Bot, message: str):
@@ -157,14 +139,13 @@ def main():
     check_tokens()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    timestamp = int(time.time())
 
     homework_status = ''
 
     while True:
         try:
             # Запрашиваем состояния проектов за временной период TIMESTAMP
-            response = get_api_answer({'form_date': timestamp})
+            response = get_api_answer({'form_date': TIMESTAMP})
 
             # Проверяем ответ API на соответствие
             check_response(response)
