@@ -57,8 +57,17 @@ def get_api_answer(timestamp: dict) -> dict:
         homework_statuses = requests.get(
             ENDPOINT,
             headers=HEADERS,
-            params=timestamp
+            params=timestamp,
         )
+        if homework_statuses.status_code != HTTPStatus.OK:
+            logger.error(
+                f'Статус ответа с эндпоинта: {homework_statuses.status_code}'
+            )
+            raise RequestStatusException(
+                f'Статус ответа с эндпоинта: {homework_statuses.status_code}'
+            )
+
+        return homework_statuses.json()
 
     except requests.ConnectionError as error:
         logger.error(
@@ -69,15 +78,7 @@ def get_api_answer(timestamp: dict) -> dict:
         logger.error(f'Сбой в программе. {error}')
         raise RequestStatusException(f'Сбой в программе. {error}.')
 
-    if homework_statuses.status_code != HTTPStatus.OK:
-        logger.error(
-            f'Статус ответа с эндпоинта: {homework_statuses.status_code}'
-        )
-        raise RequestStatusException(
-            f'Статус ответа с эндпоинта: {homework_statuses.status_code}'
-        )
 
-    return homework_statuses.json()
 
 
 def check_response(response: dict):
@@ -139,7 +140,7 @@ def main():
     while True:
         try:
             # Запрашиваем состояния проектов за временной период TIMESTAMP
-            response = get_api_answer({'form_date': TIMESTAMP})
+            response = get_api_answer(TIMESTAMP)
 
             # Проверяем ответ API на соответствие
             check_response(response)

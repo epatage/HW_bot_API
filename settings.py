@@ -9,7 +9,7 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 
 # Период времени за который должны отобразиться состояния проектов
-TIMESTAMP = {'form_date': 0}
+TIMESTAMP = {'from_date': 0}
 
 RETRY_PERIOD = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
